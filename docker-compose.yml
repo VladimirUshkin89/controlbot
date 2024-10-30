@@ -1,6 +1,7 @@
 version: '3.5'
 services:
   db:
+    restart: always
     image: postgres:13
     environment:
       - POSTGRES_DB=control_employee
@@ -17,6 +18,7 @@ services:
       retries: 5
       start_period: 80s
   web:
+    restart: on-failure
     build: .
     volumes:
       - static_volume:/var/www/static
@@ -28,10 +30,11 @@ services:
     depends_on:
       - db
   bot:
+    restart: always
     build: .
     command: python manage.py runscript bot
     depends_on:
-      - web
+      - db
 volumes:
   db_data:
   static_volume:

@@ -13,7 +13,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.handlers import CallbackQueryHandler, MessageHandler
 from aiogram.types import (InlineKeyboardButton, InlineKeyboardMarkup,
-                           KeyboardButton, Message, ReplyKeyboardRemove)
+                           KeyboardButton, Message, ReplyKeyboardRemove, BotCommand)
 from asgiref.sync import sync_to_async
 from bot.models import ActionLog, Department, TgUser, UserStatus, UserType
 from dateutil.relativedelta import relativedelta
@@ -23,7 +23,12 @@ from geopy.distance import geodesic
 
 form_router = Router()
 
+commands = [
+    BotCommand(command='menu', description='Главное меню')
+]
+
 bot = Bot(token=settings.TOKEN_BOT, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+bot.set_my_commands(commands)
 dp = Dispatcher()
 
 
