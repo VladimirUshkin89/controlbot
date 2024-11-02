@@ -26,7 +26,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
       - 8000:8000
-    command: sh -c "python manage.py migrate && python manage.py loaddata control_employee.json"
+    command: sh -c "python manage.py migrate"
     depends_on:
       - db
   bot:

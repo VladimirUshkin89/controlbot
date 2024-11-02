@@ -28,7 +28,6 @@ commands = [
 ]
 
 bot = Bot(token=settings.TOKEN_BOT, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
-bot.set_my_commands(commands)
 dp = Dispatcher()
 
 
@@ -362,7 +361,7 @@ class UserHandler(CallbackQueryHandler):
                     )],
                     [self.registered_users_back_button],
                 ])
-                msg = f'{employee.name}'
+                msg = f'{employee.name}\nТекущий статус: {UserStatus(employee.status).label}'
                 await self.message.answer(msg, reply_markup=manager_kb)
         else:
             manager_kb = InlineKeyboardMarkup(
@@ -946,23 +945,17 @@ class UpdateStatusEmployee(CallbackQueryHandler):
 class LocationMessageHandler(MessageHandler):
 
     async def handle(self) -> typing.Any:
-        await self.data['state'].set_state(None)
-        if settings.DEBUG:
-            distance_m = geodesic(
-                (self.event.location.latitude, self.event.location.longitude),
-                (self.event.location.latitude, self.event.location.longitude)
-            ).m
-        else:
-            distance_m = geodesic(
-                (45.09150498886614, 39.01328350827073),
-                (self.event.location.latitude, self.event.location.longitude)
-            ).m
+        await self.data['state'].clear()
+        distance_m = geodesic(
+            (settings.DESTINATION_LATITUDE, settings.DESTINATION_LONGITUDE),
+            (self.event.location.latitude, self.event.location.longitude)
+        ).m
         if distance_m > 100:
             msg = (
                 'Ваше место положение не совпадает с местом работы.\n'
                 'Пожалуйста вернитесь на место работы и попробуйте еще раз.'
             )
-            await self.event.answer(msg)
+            await self.event.answer(msg, reply_markup=user_kb)
         else:
             user = await get_or_create_user(self.from_user)
             status_flow = {
@@ -1246,7 +1239,7 @@ async def unknown_command(message: Message, state: FSMContext) -> None:
 
 async def run_bot():
     dp.include_router(form_router)
-
+    await bot.set_my_commands(commands)
     await dp.start_polling(bot)
 
 
@@ -1256,14 +1249,14 @@ def get_users():
 
 
 async def monitoring():
+    print('Запуск мониторинга')
     while True:
-        print('Мониторим за сотрудниками')
+        now = timezone.now().time()
         if bot.session._session and not bot.session._session.closed:
             for user in await get_users():
                 msg = None
                 department = await get_user_department(user.id)
                 if department:
-                    now = timezone.now().time()
                     if (
                         not UserStatus(user.status) is UserStatus.BEGIN
                         and (department.begin.hour == now.hour and department.begin.minute == now.minute)
